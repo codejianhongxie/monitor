@@ -16,8 +16,10 @@ import org.apache.commons.cli.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * @author xiejianhong@sequoiadb.com
@@ -94,13 +96,26 @@ public class Engine {
             boolean enableMonitor = configuration.getBooleanFromStringProperty(monitorType);
             if (enableMonitor) {
 
-                String monitorTypeName = monitorType.substring(monitorType.lastIndexOf(".")+1);
-                Task task = PluginLoader.getPluginLoader(Task.class).getPlugin(monitorTypeName);
+                String monitorTypeName = monitorType.substring(
+                        monitorType.indexOf(Constants.MONITOR_TYPE_PREFIX) + Constants.MONITOR_TYPE_PREFIX.length());
+                Task task;
+                if (monitorTypeName.contains(".")) {
+                    task = PluginLoader.getPluginLoader(Task.class).getPlugin(monitorTypeName.substring(0, monitorTypeName.lastIndexOf(".")));
+                } else {
+                    task = PluginLoader.getPluginLoader(Task.class).getPlugin(monitorTypeName);
+                }
                 String cronExpression = configuration.getStringProperty(
-                        Constants.MONITOR_TYPE_CRON.replace("{TYPE}", monitorTypeName));
+                        Constants.MONITOR_TYPE_CRON.replace(Constants.TYPE, monitorTypeName));
                 int misFireStatus = configuration.getIntProperty(
-                        Constants.MONITOR_TYPE_MISFIRESTATUS.replace("{TYPE}", monitorTypeName));
+                        Constants.MONITOR_TYPE_MISFIRE.replace(Constants.TYPE, monitorTypeName));
 
+                Map<String, String> config = new HashMap<>(3);
+                config.put("items", configuration.getStringProperty(
+                        Constants.MONITOR_TYPE_ITEMS.replace(Constants.TYPE, monitorTypeName)));
+                config.put("args", configuration.getStringProperty(
+                        Constants.MONITOR_TYPE_ARGS.replace(Constants.TYPE, monitorTypeName)));
+                config.put("output", configuration.getStringProperty(
+                        Constants.MONITOT_TYPE_OUTPUT.replace(Constants.TYPE, monitorTypeName)));
                 ScheduleJob scheduleJob = new ScheduleJob();
                 scheduleJob.setConcurrent(false);
                 scheduleJob.setJobId(id);
@@ -109,6 +124,7 @@ public class Engine {
                 scheduleJob.setJobGroup(Constants.JOB_GROUP);
                 scheduleJob.setMisfireStatus(misFireStatus);
                 scheduleJob.setTask(task);
+                scheduleJob.setJobDataMap(config);
                 scheduleJobList.add(scheduleJob);
             }
         }

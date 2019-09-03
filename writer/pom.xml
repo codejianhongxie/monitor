@@ -9,7 +9,7 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>writer</artifactId>
+    <artifactId>monitor-writer</artifactId>
     <name>monitor-writer</name>
     <packaging>jar</packaging>
 

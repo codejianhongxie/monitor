@@ -7,5 +7,5 @@ package com.sequoiadb.monitor.common.spi;
  */
 public interface Task {
 
-    void execute();
+    void execute(Object object);
 }

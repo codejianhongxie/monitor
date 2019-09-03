@@ -2,12 +2,11 @@ package com.sequoiadb.monitor.core;
 
 import com.sequoiadb.monitor.common.constant.Constants;
 import com.sequoiadb.monitor.common.spi.Task;
-import org.quartz.DisallowConcurrentExecution;
-import org.quartz.Job;
-import org.quartz.JobExecutionContext;
-import org.quartz.JobExecutionException;
+import org.quartz.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.Map;
 
 /**
  * @author xiejianhong@sequoiadb.com
@@ -26,10 +25,12 @@ public class TaskEngineDisallowConcurrentExecution implements Job {
 
     @Override
     public void execute(JobExecutionContext context) throws JobExecutionException {
-        Object taskObj = context.getJobDetail().getJobDataMap().get(Constants.JOB_NAME);
+        JobDataMap dataMap = context.getJobDetail().getJobDataMap();
+        Object taskObj = dataMap.get(Constants.JOB_NAME);
+        Object taskConfig = dataMap.get(Constants.JOB_CONFIG);
         if (taskObj instanceof Task) {
             Task task = (Task)taskObj;
-            task.execute();
+            task.execute(taskConfig);
         } else {
             log.error("不支持调度该任务类型");
         }

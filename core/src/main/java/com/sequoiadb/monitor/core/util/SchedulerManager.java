@@ -7,12 +7,12 @@ import com.sequoiadb.monitor.common.spi.Task;
 import com.sequoiadb.monitor.core.ScheduleJob;
 import com.sequoiadb.monitor.core.TaskEngine;
 import com.sequoiadb.monitor.core.TaskEngineDisallowConcurrentExecution;
+import org.bson.BSONObject;
+import org.bson.BasicBSONObject;
 import org.quartz.*;
 import org.quartz.impl.StdSchedulerFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.Date;
 
 /**
  * @author xiejianhong@sequoiadb.com
@@ -83,9 +83,11 @@ public class SchedulerManager {
             if (isConcurrent) {
                 taskEngineClass = TaskEngine.class;
             }
+            BSONObject taskConfig = new BasicBSONObject();
 
             JobDataMap data = new JobDataMap();
             data.put(Constants.JOB_NAME, task);
+            data.put(Constants.JOB_CONFIG, job.getJobDataMap());
             @SuppressWarnings("unchecked")
             JobDetail jobAdapter = JobBuilder.newJob(taskEngineClass)
                     .withIdentity(jobName, jobGroup)

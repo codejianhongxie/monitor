@@ -21,11 +21,12 @@ public class TaskEngine implements Job {
     @Override
     public void execute(JobExecutionContext context) throws JobExecutionException {
 
-        Object taskObj = context.getJobDetail().getJobDataMap().get(Constants.JOB_NAME);
+        JobDataMap dataMap = context.getJobDetail().getJobDataMap();
+        Object taskObj = dataMap.get(Constants.JOB_NAME);
+        Object taskConfig = dataMap.get(Constants.JOB_CONFIG);
         if (taskObj instanceof Task) {
             Task task = (Task)taskObj;
-            System.out.println("execute task");
-            task.execute();
+            task.execute(taskConfig);
         } else {
             log.error("不支持调度该任务类型");
         }

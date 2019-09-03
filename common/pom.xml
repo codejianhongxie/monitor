@@ -13,6 +13,14 @@
     <name>monitor-common</name>
     <packaging>jar</packaging>
 
+    <dependencies>
+        <dependency>
+            <groupId>org.bouncycastle</groupId>
+            <artifactId>bcprov-jdk15on</artifactId>
+            <version>1.56</version>
+        </dependency>
+    </dependencies>
+
     <build>
         <plugins>
             <!-- this plugin is for setting jdk version -->
@@ -23,7 +31,7 @@
                 <configuration>
                     <source>${java.version}</source>
                     <target>${java.version}</target>
-                    <encoding>${source.encoding}</encoding>
+                    <encoding>${project-sourceEncoding}</encoding>
                 </configuration>
             </plugin>
         </plugins>

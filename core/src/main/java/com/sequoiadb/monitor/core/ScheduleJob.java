@@ -3,6 +3,8 @@ package com.sequoiadb.monitor.core;
 import com.sequoiadb.monitor.common.spi.Record;
 import com.sequoiadb.monitor.common.spi.Task;
 
+import java.util.Map;
+
 /**
  * @author xiejianhong@sequoiadb.com
  * @version 1.0
@@ -18,6 +20,15 @@ public class ScheduleJob {
     private String cronExpression;
     private Task task;
     private boolean isConcurrent;
+    private Map<String, String> jobDataMap;
+
+    public Map<String, String> getJobDataMap() {
+        return jobDataMap;
+    }
+
+    public void setJobDataMap(Map<String, String> jobDataMap) {
+        this.jobDataMap = jobDataMap;
+    }
 
     public long getJobId() {
         return jobId;
