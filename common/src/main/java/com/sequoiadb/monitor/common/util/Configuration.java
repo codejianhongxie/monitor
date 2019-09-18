@@ -37,24 +37,36 @@ public class Configuration {
     public void parse(String configFileName) {
 
         log.info("begin to parse config file.");
-        Properties prop = new Properties();
         File configFile = new File(configFileName);
         if (configFile.exists()) {
-            try {
-                prop.load(new FileInputStream(configFile));
-            } catch (IOException e) {
-                log.error("failed to parse config file.", e);
-                throw MonitorException.asMonitorException(CommonErrorCode.CONFIG_ERROR, "failed to parse config file.", e);
-            }
+            loadConfigFile(configFile);
         } else {
-            log.error("config file [{}] is not exist.", configFile.getAbsoluteFile());
-            throw MonitorException.asMonitorException(CommonErrorCode.CONFIG_ERROR,
-                    "config file[" + configFile.getAbsolutePath() + "] is not exits.");
+            //尝试判断是否使用相对路径
+            configFile = new File(System.getProperty("current.dir") + File.pathSeparator + configFileName);
+            if (configFile.exists()) {
+                loadConfigFile(configFile);
+            } else {
+                log.error("config file [{}] is not exist.", configFile.getAbsoluteFile());
+                throw MonitorException.asMonitorException(CommonErrorCode.CONFIG_ERROR,
+                        "config file[" + configFile.getAbsolutePath() + "] is not exits.");
+            }
+        }
+
+        log.info("finish to parse config file.");
+    }
+
+    private void loadConfigFile(File configFile) {
+        Properties prop = new Properties();
+        try {
+            log.info("using config file: {}", configFile.getAbsolutePath());
+            prop.load(new FileInputStream(configFile));
+        } catch (IOException e) {
+            log.error("failed to parse config file.", e);
+            throw MonitorException.asMonitorException(CommonErrorCode.CONFIG_ERROR, "failed to parse config file.", e);
         }
         for(String key : prop.stringPropertyNames()) {
             props.put(key, prop.getProperty(key));
         }
-        log.info("finish to parse config file.");
     }
 
     public void putObjectProperty(String key, Object object) {

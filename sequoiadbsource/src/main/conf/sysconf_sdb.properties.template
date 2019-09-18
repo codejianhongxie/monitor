@@ -1,0 +1,7 @@
+monitor.source.type.sdb.sdb_node=on
+monitor.source.sdb.sdb_node.items=node_status,node_lsn,node_perf
+monitor.source.sdb.sdb_node.cron=0/5 * * * * ?
+monitor.source.sdb.sdb_node.output=
+monitor.source.sdb.sdb_node.args=
+monitor.source.sdb.sdb_node.misfire=1
+

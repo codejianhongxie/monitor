@@ -4,7 +4,7 @@ import com.sequoiadb.monitor.common.constant.Constants;
 import com.sequoiadb.monitor.common.exception.CommonErrorCode;
 import com.sequoiadb.monitor.common.exception.MonitorException;
 import com.sequoiadb.monitor.common.spi.Task;
-import com.sequoiadb.monitor.core.ScheduleJob;
+import com.sequoiadb.monitor.core.ScheduleTask;
 import com.sequoiadb.monitor.core.TaskEngine;
 import com.sequoiadb.monitor.core.TaskEngineDisallowConcurrentExecution;
 import org.bson.BSONObject;
@@ -56,11 +56,7 @@ public class SchedulerManager {
         }
     }
 
-    public void addJob(ScheduleJob job) {
-
-//        if (job == null || !job.getJobStatus().equalsIgnoreCase("on")) {
-//            return;
-//        }
+    public void addJob(ScheduleTask job) {
 
         String jobName = job.getJobName();
         String jobGroup = job.getJobGroup();
@@ -131,16 +127,16 @@ public class SchedulerManager {
         }
     }
 
-    public void deleteJob(ScheduleJob scheduleJob) throws SchedulerException {
+    public void deleteJob(ScheduleTask scheduleTask) throws SchedulerException {
 
-        JobKey jobKey = JobKey.jobKey(scheduleJob.getJobName(),
-                scheduleJob.getJobGroup());
+        JobKey jobKey = JobKey.jobKey(scheduleTask.getJobName(),
+                scheduleTask.getJobGroup());
         server.deleteJob(jobKey);
     }
 
-    public void runJobNow(ScheduleJob scheduleJob) throws SchedulerException {
-        JobKey jobKey = JobKey.jobKey(scheduleJob.getJobName(),
-                scheduleJob.getJobGroup());
+    public void runJobNow(ScheduleTask scheduleTask) throws SchedulerException {
+        JobKey jobKey = JobKey.jobKey(scheduleTask.getJobName(),
+                scheduleTask.getJobGroup());
         server.triggerJob(jobKey);
     }
 

@@ -17,25 +17,42 @@
             <outputDirectory>monitor</outputDirectory>
         </fileSet>
         <fileSet>
-            <directory>task/target/monitor/</directory>
-            <includes>
-                <include>**/*.*</include>
-            </includes>
-            <outputDirectory>monitor</outputDirectory>
-        </fileSet>
-        <fileSet>
-            <directory>writer/target/monitor/</directory>
-            <includes>
-                <include>**/*.*</include>
-            </includes>
-            <outputDirectory>monitor</outputDirectory>
-        </fileSet>
-        <fileSet>
             <directory>core/target/monitor/</directory>
             <includes>
                 <include>**/*.*</include>
             </includes>
             <outputDirectory>monitor</outputDirectory>
         </fileSet>
+        <!--source-->
+        <fileSet>
+            <directory>sequoiadbsource/target/monitor/</directory>
+            <includes>
+                <include>**/*.*</include>
+            </includes>
+            <outputDirectory>monitor</outputDirectory>
+        </fileSet>
+        <fileSet>
+            <directory>consolesource/target/monitor/</directory>
+            <includes>
+                <include>**/*.*</include>
+            </includes>
+            <outputDirectory>monitor</outputDirectory>
+        </fileSet>
+        <!--target-->
+        <fileSet>
+            <directory>consoletarget/target/monitor/</directory>
+            <includes>
+                <include>**/*.*</include>
+            </includes>
+            <outputDirectory>monitor</outputDirectory>
+        </fileSet>
+        <fileSet>
+            <directory>gdrcutarget/target/monitor/</directory>
+            <includes>
+                <include>**/*.*</include>
+            </includes>
+            <outputDirectory>monitor</outputDirectory>
+        </fileSet>
+
     </fileSets>
 </assembly>

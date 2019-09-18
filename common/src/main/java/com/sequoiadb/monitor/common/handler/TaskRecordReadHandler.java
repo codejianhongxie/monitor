@@ -4,7 +4,7 @@ import com.sequoiadb.monitor.common.constant.Constants;
 import com.sequoiadb.monitor.common.record.TerminalRecord;
 import com.sequoiadb.monitor.common.spi.Exchanger;
 import com.sequoiadb.monitor.common.spi.Record;
-import com.sequoiadb.monitor.common.spi.Writer;
+import com.sequoiadb.monitor.common.spi.Target;
 import com.sequoiadb.monitor.common.util.Configuration;
 import com.sequoiadb.monitor.common.util.PluginLoader;
 import org.slf4j.Logger;
@@ -20,7 +20,6 @@ public class TaskRecordReadHandler implements Runnable {
     private final static Logger log = LoggerFactory.getLogger(TaskRecordReadHandler.class);
 
     private Exchanger<Record> exchanger;
-    private Writer<Record> writer;
 
     public TaskRecordReadHandler(Exchanger<Record> exchanger) {
         this.exchanger = exchanger;
@@ -29,16 +28,16 @@ public class TaskRecordReadHandler implements Runnable {
     @Override
     public void run() {
 
-        String outputType = Configuration.getInstance().getStringProperty(Constants.MONITOR_OUTPUT_TYPE);
+        String outputType = Configuration.getInstance().getStringProperty(Constants.MONITOR_TARGET_TYPE);
         @SuppressWarnings("unchecked")
-        Writer<Record> writer = (Writer<Record>) PluginLoader.getPluginLoader(Writer.class).getPlugin(outputType);
+        Target<Record> target = (Target<Record>) PluginLoader.getPluginLoader(Target.class).getPlugin(outputType);
         while(true) {
             try {
                 Record record = exchanger.get();
                 if (record instanceof TerminalRecord) {
                     break;
                 }
-                writer.output(record);
+                target.output(record);
             } catch (InterruptedException e) {
                 log.error("failed to get record from exchanger", e);
             }

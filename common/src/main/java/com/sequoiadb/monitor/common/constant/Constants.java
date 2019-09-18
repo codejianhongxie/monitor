@@ -1,5 +1,7 @@
 package com.sequoiadb.monitor.common.constant;
 
+import java.io.File;
+
 /**
  * @author xiejianhong@sequoiadb.com
  * @version 1.0
@@ -12,40 +14,27 @@ public class Constants {
     public final static String JOB_GROUP = "task.group";
     public final static String JOB_NAME = "task.name";
     public static final String JOB_CONFIG = "task.config";
-    public final static String MONITOR_TYPE_PREFIX = "monitor.type.";
     public final static String TYPE = "{TYPE}";
-    public final static String MONITOR_TYPE_CRON = "monitor." + TYPE + ".cron";
-    public final static String MONITOR_TYPE_ITEMS = "monitor." + TYPE + ".items";
-    public final static String MONITOT_TYPE_OUTPUT= "monitor." + TYPE + ".output";
-    public final static String MONITOR_TYPE_ARGS= "monitor." + TYPE + ".args";
-    public final static String MONITOR_TYPE_MISFIRE= "monitor." + TYPE + ".misfire";
-
-    //sequoiadb 监控项配置参数
+    public final static String ITEM = "{ITEM}";
+    public final static String ITEMS = "items";
+    public final static String OUTPUT = "output";
+    public final static String ARGS = "args";
     public final static String MONITOR_SOURCE_TYPE = "monitor.source.type";
-    public final static String MONITOR_SOURCE_SDB_HOST= "monitor.source.sdb.host";
-    public final static String MONITOR_SOURCE_SDB_USER = "monitor.source.sdb.user";
-    public final static String MONITOR_SOURCE_SDB_PASSWORD_PRIVATE_KEY = "monitor.source.sdb.password.private_key";
-    public final static String MONITOR_SOURCE_SDB_PASSWORD_PUBLIC_KEY = "monitor.source.sdb.password.public_key";
-    public final static String MONITOR_SOURCE_SDB_PASSWORD_ENCRYPT_TYPE = "monitor.source.sdb.password.encrypt_type";
-    public final static String MONITOR_SOURCE_SDB_PASSWORD = "monitor.source.sdb.password";
+    public final static String MONITOR_SOURCE_TYPE_PREFIX = "monitor.source.type." + TYPE + ".";
+    public final static String MONITOR_SOURCE_TYPE_ITEM_CRON = "monitor.source." + TYPE + "." + ITEM + ".cron";
+    public final static String MONITOR_SOURCE_TYPE_ITEM_ITEMS = "monitor.source." + TYPE + "." + ITEM +".items";
+    public final static String MONITOR_SOURCE_TYPE_ITEM_OUTPUT= "monitor.source." + TYPE + "."+ ITEM + ".output";
+    public final static String MONITOR_SOURCE_TYPE_ITEM_ARGS= "monitor.source." + TYPE + "." + ITEM + ".args";
+    public final static String MONITOR_SOURCE_TYPE_ITEM_MISFIRE= "monitor.source." + TYPE + "." + ITEM + ".misfire";
 
-    //sequoiadb 数据存储配置参数
     public final static String MONITOR_TARGET_TYPE = "monitor.target.type";
-    public final static String MONITOR_TARGET_SDB_DOMAIN = "monitor.target.sdb.domain";
-    public final static String MONITOR_TARGET_SDB_CS = "monitor.target.sdb.cs";
-    public final static String MONITOR_TARGET_SDB_BACKUP = "monitor.target.sdb.backup";
-    public final static String MONITOR_TARGET_SDB_HISTORY_SUFFIX = "monitor.target.sdb.history_suffix";
-
-    public final static String DATA_ROLE = "data";
-    public final static String CATA_ROLE = "cata";
-    public final static String COORD_ROLE = "coord";
-    public final static String NODE_INFO = "node";
 
     public final static String ITEM_DELIMITER = ";";
     public final static String RECORD_DELIMIER = ",";
     public final static String ARG_DELIMITER = ":";
 
-    public static final String HISTORY = "_his";
+    public final static String PROGRAM_DIR = System.getProperty("program.dir");
+    public final static String DEFAULT_CONFIG_FILE =  PROGRAM_DIR + "conf" + File.separator + "sysconf.properties";
 
 
 }

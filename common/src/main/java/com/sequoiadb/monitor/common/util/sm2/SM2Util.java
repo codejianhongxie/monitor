@@ -14,25 +14,6 @@ import java.math.BigInteger;
  */
 public class SM2Util {
 
-    public static void generateEncryptPassword(String password) {
-        SM2Bean sm2 = SM2Bean.Instance();
-        AsymmetricCipherKeyPair key = sm2.ecc_key_pair_generator.generateKeyPair();
-        ECPrivateKeyParameters ecpriv = (ECPrivateKeyParameters) key.getPrivate();
-        ECPublicKeyParameters ecpub = (ECPublicKeyParameters) key.getPublic();
-        BigInteger privateKey = ecpriv.getD();
-        ECPoint publicKey = ecpub.getQ();
-
-        String passwordPublicKey = DigitalUtil.byteToHex(publicKey.getEncoded(false));
-        String passwordPrivateKey = DigitalUtil.byteToHex(privateKey.toByteArray());
-        String encryptPassword = encrypt(DigitalUtil.hexToByte(passwordPublicKey), password.getBytes());
-
-        System.out.println("公钥: " + passwordPublicKey);
-        System.out.println("私钥: " + passwordPrivateKey);
-        System.out.println("加密: " + encryptPassword);
-
-    }
-
-
     public static String encrypt(byte[] publicKey, byte[] data) {
         if (publicKey == null || publicKey.length == 0) {
             return null;

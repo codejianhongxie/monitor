@@ -12,8 +12,13 @@
     <modules>
         <module>core</module>
         <module>common</module>
-        <module>task</module>
-        <module>writer</module>
+        <!--source-->
+        <module>consolesource</module>
+        <module>sequoiadbsource</module>
+        <!--target-->
+        <module>gdrcutarget</module>
+        <module>consoletarget</module>
+
     </modules>
 
     <properties>

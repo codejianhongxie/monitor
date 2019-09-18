@@ -9,6 +9,7 @@ import com.sequoiadb.monitor.common.spi.Exchanger;
 import com.sequoiadb.monitor.common.spi.Record;
 import com.sequoiadb.monitor.common.spi.Task;
 import com.sequoiadb.monitor.common.util.Configuration;
+import com.sequoiadb.monitor.common.util.EncryptUtil;
 import com.sequoiadb.monitor.common.util.PluginLoader;
 import com.sequoiadb.monitor.core.transport.BufferedRecordExchanger;
 import com.sequoiadb.monitor.core.util.SchedulerManager;
@@ -16,6 +17,7 @@ import org.apache.commons.cli.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -31,33 +33,42 @@ import java.util.Map;
  */
 public class Engine {
 
-    private final static Logger log = LoggerFactory.getLogger(Engine.class);
     private final static String CONF_OPTION = "conf";
+    private final static String P_OPTION = "p";
+    private final static String H_OPTION = "h";
     private final static int ERROR_EXIT_CODE = -1;
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
 
-        Option config = new Option(CONF_OPTION, true, "use given file for configurtion");
+        Option configOption = new Option(CONF_OPTION, true, "use given file for configurtion");
+        Option pOption = new Option(P_OPTION, true, "encrpyt password");
+        Option hOption = new Option(H_OPTION, false, "help");
+
         Options options = new Options();
-        options.addOption(config);
+        options.addOption(configOption);
+        options.addOption(pOption);
+        options.addOption(hOption);
 
         CommandLineParser parser = new DefaultParser();
 
         try {
             CommandLine line = parser.parse(options, args);
-
-            if (line.getOptions().length <= 0) {
+            String configFileName = Constants.DEFAULT_CONFIG_FILE;
+            if (line.hasOption(CONF_OPTION)) {
+                configFileName = line.getOptionValue(CONF_OPTION);
+            } else if (line.hasOption(P_OPTION)) {
+                String password = line.getOptionValue(P_OPTION);
+                EncryptUtil.generateEncryptPassword(password);
+                System.exit(0);
+            } else if (line.hasOption(H_OPTION)) {
                 HelpFormatter formatter = new HelpFormatter();
                 formatter.printHelp("Options", options);
-                System.exit(ERROR_EXIT_CODE);
-            } else if (line.hasOption(CONF_OPTION)) {
-                String configFileName = line.getOptionValue(CONF_OPTION);
-                Configuration configuration = Configuration.getInstance();
-                configuration.parse(configFileName);
-
-                Engine engine = new Engine();
-                engine.start(configuration);
+                System.exit(0);
             }
+            Configuration configuration = Configuration.getInstance();
+            configuration.parse(configFileName);
+            Engine engine = new Engine();
+            engine.start(configuration);
         } catch (Exception e) {
             if (TaskRecordWriteHandler.getInstance().existExchanger()) {
                 try {
@@ -66,8 +77,7 @@ public class Engine {
                     //
                 }
             }
-            log.error("failed to parse argument", e);
-            System.exit(ERROR_EXIT_CODE);
+            throw e;
         }
     }
 
@@ -79,25 +89,25 @@ public class Engine {
 
         TaskRecordWriteHandler.getInstance().setExchanger(exchanger);
         new Thread(new TaskRecordReadHandler(exchanger)).start();
-        List<ScheduleJob> scheduleJobList = getAllScheduleJob(configuration);
+        List<ScheduleTask> scheduleTaskList = getAllScheduleJob(configuration);
 
-        for(ScheduleJob scheduleJob : scheduleJobList) {
-            schedulerManager.addJob(scheduleJob);
+        for(ScheduleTask scheduleTask : scheduleTaskList) {
+            schedulerManager.addJob(scheduleTask);
         }
     }
 
-    private List<ScheduleJob> getAllScheduleJob(Configuration configuration) {
-        List<ScheduleJob> scheduleJobList = new LinkedList<>();
-
-        String[] monitorTypeArr = configuration.getPropertyGroups(Constants.MONITOR_TYPE_PREFIX);
+    private List<ScheduleTask> getAllScheduleJob(Configuration configuration) {
+        List<ScheduleTask> scheduleTaskList = new LinkedList<>();
+        String sourceType = configuration.getStringProperty(Constants.MONITOR_SOURCE_TYPE);
+        String sourceTypePrefix = Constants.MONITOR_SOURCE_TYPE_PREFIX.replace(Constants.TYPE, sourceType);
+        String[] monitorTypeArr = configuration.getPropertyGroups(sourceTypePrefix);
         for( int id = 0; id < monitorTypeArr.length; id++) {
 
             String monitorType = monitorTypeArr[id];
             boolean enableMonitor = configuration.getBooleanFromStringProperty(monitorType);
             if (enableMonitor) {
 
-                String monitorTypeName = monitorType.substring(
-                        monitorType.indexOf(Constants.MONITOR_TYPE_PREFIX) + Constants.MONITOR_TYPE_PREFIX.length());
+                String monitorTypeName = monitorType.substring(sourceTypePrefix.length());
                 Task task;
                 if (monitorTypeName.contains(".")) {
                     task = PluginLoader.getPluginLoader(Task.class).getPlugin(monitorTypeName.substring(0, monitorTypeName.lastIndexOf(".")));
@@ -105,30 +115,44 @@ public class Engine {
                     task = PluginLoader.getPluginLoader(Task.class).getPlugin(monitorTypeName);
                 }
                 String cronExpression = configuration.getStringProperty(
-                        Constants.MONITOR_TYPE_CRON.replace(Constants.TYPE, monitorTypeName));
+                        Constants.MONITOR_SOURCE_TYPE_ITEM_CRON
+                                .replace(Constants.TYPE, sourceType)
+                                .replace(Constants.ITEM, monitorTypeName));
                 int misFireStatus = configuration.getIntProperty(
-                        Constants.MONITOR_TYPE_MISFIRE.replace(Constants.TYPE, monitorTypeName));
+                        Constants.MONITOR_SOURCE_TYPE_ITEM_MISFIRE
+                                .replace(Constants.TYPE, sourceType)
+                                .replace(Constants.ITEM, monitorTypeName)
+                );
 
                 Map<String, String> config = new HashMap<>(3);
-                config.put("items", configuration.getStringProperty(
-                        Constants.MONITOR_TYPE_ITEMS.replace(Constants.TYPE, monitorTypeName)));
-                config.put("args", configuration.getStringProperty(
-                        Constants.MONITOR_TYPE_ARGS.replace(Constants.TYPE, monitorTypeName)));
-                config.put("output", configuration.getStringProperty(
-                        Constants.MONITOT_TYPE_OUTPUT.replace(Constants.TYPE, monitorTypeName)));
-                ScheduleJob scheduleJob = new ScheduleJob();
-                scheduleJob.setConcurrent(false);
-                scheduleJob.setJobId(id);
-                scheduleJob.setJobName(monitorTypeName + id);
-                scheduleJob.setCronExpression(cronExpression);
-                scheduleJob.setJobGroup(Constants.JOB_GROUP);
-                scheduleJob.setMisfireStatus(misFireStatus);
-                scheduleJob.setTask(task);
-                scheduleJob.setJobDataMap(config);
-                scheduleJobList.add(scheduleJob);
+                config.put(Constants.ITEMS, configuration.getStringProperty(
+                        Constants.MONITOR_SOURCE_TYPE_ITEM_ITEMS
+                                .replace(Constants.TYPE, sourceType)
+                                .replace(Constants.ITEM, monitorTypeName)
+                ));
+                config.put(Constants.ARGS, configuration.getStringProperty(
+                        Constants.MONITOR_SOURCE_TYPE_ITEM_ARGS
+                                .replace(Constants.TYPE, monitorType)
+                                .replace(Constants.ITEM, monitorTypeName)
+                ));
+                config.put(Constants.OUTPUT, configuration.getStringProperty(
+                        Constants.MONITOR_SOURCE_TYPE_ITEM_OUTPUT
+                                .replace(Constants.TYPE, monitorType)
+                                .replace(Constants.ITEM, monitorTypeName)
+                ));
+                ScheduleTask scheduleTask = new ScheduleTask();
+                scheduleTask.setConcurrent(false);
+                scheduleTask.setJobId(id);
+                scheduleTask.setJobName(monitorTypeName + id);
+                scheduleTask.setCronExpression(cronExpression);
+                scheduleTask.setJobGroup(Constants.JOB_GROUP);
+                scheduleTask.setMisfireStatus(misFireStatus);
+                scheduleTask.setTask(task);
+                scheduleTask.setJobDataMap(config);
+                scheduleTaskList.add(scheduleTask);
             }
         }
-        return scheduleJobList;
+        return scheduleTaskList;
     }
 
 }

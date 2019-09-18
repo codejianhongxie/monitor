@@ -2,6 +2,8 @@ package com.sequoiadb.monitor.common.record;
 
 import com.sequoiadb.monitor.common.spi.Record;
 
+import java.util.List;
+
 /**
  * @author xiejianhong@sequoiadb.com
  * @version 1.0
@@ -18,5 +20,10 @@ public class TextRecord implements Record {
     @Override
     public String toString() {
         return value;
+    }
+
+    @Override
+    public List getDataList() {
+        return null;
     }
 }
