@@ -140,6 +140,10 @@ public class SchedulerManager {
         server.triggerJob(jobKey);
     }
 
+    public void shutdown() throws SchedulerException {
+        server.shutdown();
+    }
+
 
 
 }

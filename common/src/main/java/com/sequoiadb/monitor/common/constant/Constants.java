@@ -36,5 +36,7 @@ public class Constants {
     public final static String PROGRAM_DIR = System.getProperty("program.dir");
     public final static String DEFAULT_CONFIG_FILE =  PROGRAM_DIR + "conf" + File.separator + "sysconf.properties";
 
-
+    public final static String MONITOR_ZK_URL="monitor.zk.url";
+    public final static String MONITOR_ZK_WATCHER_PATH="monitor.zk.watcher.path";
+    public final static String MONITOR_ZK_SESSION_TIMEOUT = "monitor.zk.session.timeout";
 }

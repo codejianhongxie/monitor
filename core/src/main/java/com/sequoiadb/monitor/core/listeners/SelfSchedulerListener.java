@@ -2,6 +2,7 @@ package com.sequoiadb.monitor.core.listeners;
 
 import com.sequoiadb.monitor.common.handler.TaskRecordWriteHandler;
 import com.sequoiadb.monitor.common.record.TerminalRecord;
+import com.sequoiadb.monitor.core.util.ThreadExecutorFactory;
 import org.quartz.*;
 
 /**
@@ -100,6 +101,7 @@ public class SelfSchedulerListener implements SchedulerListener {
     public void schedulerShutdown() {
         try {
             TaskRecordWriteHandler.getInstance().put(new TerminalRecord());
+            ThreadExecutorFactory.getInstance().shutdown();
         } catch (InterruptedException e) {
             //
         }

@@ -1,4 +1,4 @@
-package com.sequoiadb.monitor.source.sequoiadbsource.util;
+package com.sequoiadb.monitor.core.util;
 
 import java.util.concurrent.*;
 
@@ -12,10 +12,10 @@ public class ThreadExecutorFactory {
     private ExecutorService executorService;
 
     private ThreadExecutorFactory() {
-        int corePoolSize = 1;
-        int maximumPoolSize = 1;
+        int corePoolSize = 2;
+        int maximumPoolSize = 2;
         long keepAliveTime = 60000;
-        int queueSize = 100;
+        int queueSize = 1;
         executorService =
                 new ThreadPoolExecutor(
                         corePoolSize,
@@ -23,7 +23,7 @@ public class ThreadExecutorFactory {
                         keepAliveTime,
                         TimeUnit.MILLISECONDS,
                         new LinkedBlockingQueue<Runnable>(queueSize),
-                        new CollectorThreadFactory(),
+                        new MonitorThreadFactory(),
                         new ThreadPoolExecutor.AbortPolicy());
     }
 
@@ -36,6 +36,10 @@ public class ThreadExecutorFactory {
     }
 
     public <T> Future<T> submit(Callable<T> task) {
+        return executorService.submit(task);
+    }
+
+    public <T> Future<?> submit(Runnable task) {
         return executorService.submit(task);
     }
 

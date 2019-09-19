@@ -1,7 +1,6 @@
 package com.sequoiadb.monitor.core;
 
 import com.sequoiadb.monitor.common.constant.Constants;
-import com.sequoiadb.monitor.common.exception.MonitorException;
 import com.sequoiadb.monitor.common.handler.TaskRecordReadHandler;
 import com.sequoiadb.monitor.common.handler.TaskRecordWriteHandler;
 import com.sequoiadb.monitor.common.record.TerminalRecord;
@@ -13,11 +12,9 @@ import com.sequoiadb.monitor.common.util.EncryptUtil;
 import com.sequoiadb.monitor.common.util.PluginLoader;
 import com.sequoiadb.monitor.core.transport.BufferedRecordExchanger;
 import com.sequoiadb.monitor.core.util.SchedulerManager;
+import com.sequoiadb.monitor.core.util.ThreadExecutorFactory;
 import org.apache.commons.cli.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-import java.io.File;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -27,16 +24,13 @@ import java.util.Map;
  * @author xiejianhong@sequoiadb.com
  * @date 2019/6/23 11:42
  * @version 1.0
- * TODO:
- * 1. 支持高可用
- * 2. 支持misfire任务，以当前时间为触发频率立刻触发一次执行，然后以当前时间开始，按照正常的Cron频率依次执行
+ * 1. 支持misfire任务，以当前时间为触发频率立刻触发一次执行，然后以当前时间开始，按照正常的Cron频率依次执行
  */
 public class Engine {
 
     private final static String CONF_OPTION = "conf";
     private final static String P_OPTION = "p";
     private final static String H_OPTION = "h";
-    private final static int ERROR_EXIT_CODE = -1;
 
     public static void main(String[] args) throws Exception {
 
@@ -65,10 +59,18 @@ public class Engine {
                 formatter.printHelp("Options", options);
                 System.exit(0);
             }
-            Configuration configuration = Configuration.getInstance();
+            final Configuration configuration = Configuration.getInstance();
             configuration.parse(configFileName);
-            Engine engine = new Engine();
-            engine.start(configuration);
+
+            if (configuration.getStringProperty(Constants.MONITOR_ZK_URL) != null) {
+                String zkUrl = configuration.getStringProperty(Constants.MONITOR_ZK_URL);
+                int sessionTimeout = configuration.getIntProperty(Constants.MONITOR_ZK_SESSION_TIMEOUT);
+                final String watcherPath = configuration.getStringProperty(Constants.MONITOR_ZK_WATCHER_PATH);
+                ThreadExecutorFactory.getInstance().submit(new MasterThread(zkUrl, sessionTimeout, watcherPath));
+            } else {
+                Engine engine = new Engine();
+                engine.start(configuration);
+            }
         } catch (Exception e) {
             if (TaskRecordWriteHandler.getInstance().existExchanger()) {
                 try {
@@ -81,14 +83,14 @@ public class Engine {
         }
     }
 
-    private void start(Configuration configuration) throws MonitorException {
+    public void start(Configuration configuration) {
 
         Exchanger<Record> exchanger = new BufferedRecordExchanger<Record>();
         SchedulerManager schedulerManager = SchedulerManager.getInstance();
         schedulerManager.start();
 
         TaskRecordWriteHandler.getInstance().setExchanger(exchanger);
-        new Thread(new TaskRecordReadHandler(exchanger)).start();
+        ThreadExecutorFactory.getInstance().submit(new TaskRecordReadHandler(exchanger));
         List<ScheduleTask> scheduleTaskList = getAllScheduleJob(configuration);
 
         for(ScheduleTask scheduleTask : scheduleTaskList) {
