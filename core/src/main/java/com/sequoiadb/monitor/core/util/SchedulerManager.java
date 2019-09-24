@@ -7,6 +7,9 @@ import com.sequoiadb.monitor.common.spi.Task;
 import com.sequoiadb.monitor.core.ScheduleTask;
 import com.sequoiadb.monitor.core.TaskEngine;
 import com.sequoiadb.monitor.core.TaskEngineDisallowConcurrentExecution;
+import com.sequoiadb.monitor.core.listeners.SelfJobListener;
+import com.sequoiadb.monitor.core.listeners.SelfSchedulerListener;
+import com.sequoiadb.monitor.core.listeners.SelfTriggerListener;
 import org.bson.BSONObject;
 import org.bson.BasicBSONObject;
 import org.quartz.*;
@@ -49,6 +52,7 @@ public class SchedulerManager {
 
     public void start() throws MonitorException {
         try {
+            server.getListenerManager().addSchedulerListener(new SelfSchedulerListener());
             server.start();
         } catch (SchedulerException e) {
             log.error("failed to start scheduler", e);

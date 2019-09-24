@@ -96,62 +96,66 @@ public class Engine {
         for(ScheduleTask scheduleTask : scheduleTaskList) {
             schedulerManager.addJob(scheduleTask);
         }
+        ThreadExecutorFactory.getInstance().shutdown();
     }
 
     private List<ScheduleTask> getAllScheduleJob(Configuration configuration) {
         List<ScheduleTask> scheduleTaskList = new LinkedList<>();
-        String sourceType = configuration.getStringProperty(Constants.MONITOR_SOURCE_TYPE);
-        String sourceTypePrefix = Constants.MONITOR_SOURCE_TYPE_PREFIX.replace(Constants.TYPE, sourceType);
-        String[] monitorTypeArr = configuration.getPropertyGroups(sourceTypePrefix);
-        for( int id = 0; id < monitorTypeArr.length; id++) {
+        String sourceTypeStr = configuration.getStringProperty(Constants.MONITOR_SOURCE_TYPE);
+        String[] sourceTypeArr = sourceTypeStr.split(Constants.RECORD_DELIMIER);
+        for (String sourceType : sourceTypeArr) {
+            String sourceTypePrefix = Constants.MONITOR_SOURCE_TYPE_PREFIX.replace(Constants.TYPE, sourceType);
+            String[] monitorTypeArr = configuration.getPropertyGroups(sourceTypePrefix);
+            for (int id = 0; id < monitorTypeArr.length; id++) {
 
-            String monitorType = monitorTypeArr[id];
-            boolean enableMonitor = configuration.getBooleanFromStringProperty(monitorType);
-            if (enableMonitor) {
+                String monitorType = monitorTypeArr[id];
+                boolean enableMonitor = configuration.getBooleanFromStringProperty(monitorType);
+                if (enableMonitor) {
 
-                String monitorTypeName = monitorType.substring(sourceTypePrefix.length());
-                Task task;
-                if (monitorTypeName.contains(".")) {
-                    task = PluginLoader.getPluginLoader(Task.class).getPlugin(monitorTypeName.substring(0, monitorTypeName.lastIndexOf(".")));
-                } else {
-                    task = PluginLoader.getPluginLoader(Task.class).getPlugin(monitorTypeName);
+                    String monitorTypeName = monitorType.substring(sourceTypePrefix.length());
+                    Task task;
+                    if (monitorTypeName.contains(".")) {
+                        task = PluginLoader.getPluginLoader(Task.class).getPlugin(monitorTypeName.substring(0, monitorTypeName.lastIndexOf(".")));
+                    } else {
+                        task = PluginLoader.getPluginLoader(Task.class).getPlugin(monitorTypeName);
+                    }
+                    String cronExpression = configuration.getStringProperty(
+                            Constants.MONITOR_SOURCE_TYPE_ITEM_CRON
+                                    .replace(Constants.TYPE, sourceType)
+                                    .replace(Constants.ITEM, monitorTypeName));
+                    int misFireStatus = configuration.getIntProperty(
+                            Constants.MONITOR_SOURCE_TYPE_ITEM_MISFIRE
+                                    .replace(Constants.TYPE, sourceType)
+                                    .replace(Constants.ITEM, monitorTypeName)
+                    );
+
+                    Map<String, String> config = new HashMap<>(3);
+                    config.put(Constants.ITEMS, configuration.getStringProperty(
+                            Constants.MONITOR_SOURCE_TYPE_ITEM_ITEMS
+                                    .replace(Constants.TYPE, sourceType)
+                                    .replace(Constants.ITEM, monitorTypeName)
+                    ));
+                    config.put(Constants.ARGS, configuration.getStringProperty(
+                            Constants.MONITOR_SOURCE_TYPE_ITEM_ARGS
+                                    .replace(Constants.TYPE, sourceType)
+                                    .replace(Constants.ITEM, monitorTypeName)
+                    ));
+                    config.put(Constants.OUTPUT, configuration.getStringProperty(
+                            Constants.MONITOR_SOURCE_TYPE_ITEM_OUTPUT
+                                    .replace(Constants.TYPE, sourceType)
+                                    .replace(Constants.ITEM, monitorTypeName)
+                    ));
+                    ScheduleTask scheduleTask = new ScheduleTask();
+                    scheduleTask.setConcurrent(false);
+                    scheduleTask.setJobId(id);
+                    scheduleTask.setJobName(monitorTypeName + id);
+                    scheduleTask.setCronExpression(cronExpression);
+                    scheduleTask.setJobGroup(Constants.JOB_GROUP);
+                    scheduleTask.setMisfireStatus(misFireStatus);
+                    scheduleTask.setTask(task);
+                    scheduleTask.setJobDataMap(config);
+                    scheduleTaskList.add(scheduleTask);
                 }
-                String cronExpression = configuration.getStringProperty(
-                        Constants.MONITOR_SOURCE_TYPE_ITEM_CRON
-                                .replace(Constants.TYPE, sourceType)
-                                .replace(Constants.ITEM, monitorTypeName));
-                int misFireStatus = configuration.getIntProperty(
-                        Constants.MONITOR_SOURCE_TYPE_ITEM_MISFIRE
-                                .replace(Constants.TYPE, sourceType)
-                                .replace(Constants.ITEM, monitorTypeName)
-                );
-
-                Map<String, String> config = new HashMap<>(3);
-                config.put(Constants.ITEMS, configuration.getStringProperty(
-                        Constants.MONITOR_SOURCE_TYPE_ITEM_ITEMS
-                                .replace(Constants.TYPE, sourceType)
-                                .replace(Constants.ITEM, monitorTypeName)
-                ));
-                config.put(Constants.ARGS, configuration.getStringProperty(
-                        Constants.MONITOR_SOURCE_TYPE_ITEM_ARGS
-                                .replace(Constants.TYPE, monitorType)
-                                .replace(Constants.ITEM, monitorTypeName)
-                ));
-                config.put(Constants.OUTPUT, configuration.getStringProperty(
-                        Constants.MONITOR_SOURCE_TYPE_ITEM_OUTPUT
-                                .replace(Constants.TYPE, monitorType)
-                                .replace(Constants.ITEM, monitorTypeName)
-                ));
-                ScheduleTask scheduleTask = new ScheduleTask();
-                scheduleTask.setConcurrent(false);
-                scheduleTask.setJobId(id);
-                scheduleTask.setJobName(monitorTypeName + id);
-                scheduleTask.setCronExpression(cronExpression);
-                scheduleTask.setJobGroup(Constants.JOB_GROUP);
-                scheduleTask.setMisfireStatus(misFireStatus);
-                scheduleTask.setTask(task);
-                scheduleTask.setJobDataMap(config);
-                scheduleTaskList.add(scheduleTask);
             }
         }
         return scheduleTaskList;

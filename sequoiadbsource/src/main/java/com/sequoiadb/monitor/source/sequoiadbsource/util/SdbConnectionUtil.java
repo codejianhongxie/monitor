@@ -45,12 +45,10 @@ public class SdbConnectionUtil {
         for (String host : hostsArr) {
 
             if (connectMap.containsKey(host)) {
-                log.info("begin to valid connect [{}]", host);
                 Sequoiadb db = connectMap.get(host);
                 if (db.isValid()) {
                     return db;
                 }
-                log.info("finish to valid connect [{}]", host);
             }
             try {
                 String[] hostArr = host.split(Constants.ARG_DELIMITER);
@@ -107,15 +105,71 @@ public class SdbConnectionUtil {
         connectMap.put(node, db);
         return db;
     }
+    
+    public Sequoiadb getSdbConnection(String host) {
+        String[] hostArr = host.split(Constants.ARG_DELIMITER);
+        String hostName = hostArr[0];
+        int serviceName = Integer.parseInt(hostArr[1]);
+        Configuration configuration = Configuration.getInstance();
+        String userName = configuration.getStringProperty(SequoiadbConstants.MONITOR_SOURCE_SDB_USER);
+        String password = EncryptUtil.passwordDecrypt(
+                configuration.getStringProperty(SequoiadbConstants.MONITOR_SOURCE_SDB_PASSWORD_ENCRYPT_TYPE),
+                configuration.getStringProperty(SequoiadbConstants.MONITOR_SOURCE_SDB_PASSWORD_PRIVATE_KEY),
+                configuration.getStringProperty(SequoiadbConstants.MONITOR_SOURCE_SDB_PASSWORD));
+        return  getConnection(hostName, serviceName, userName, password);
+    }
 
-    public void close() {
+    public Sequoiadb getSdbConnection(int connectTimeout, int socketTimeout) {
+        String hosts = configuration.getStringProperty(SequoiadbConstants.MONITOR_SOURCE_SDB_HOST);
+        String[] hostsArr = hosts.split(Constants.RECORD_DELIMIER);
+        for (String host : hostsArr) {
 
-        for (String node : connectMap.keySet()) {
             try {
-                connectMap.get(node).close();
-            } catch (Exception e) {
-                log.warn("failed to close connect", e);
+                String[] hostArr = host.split(Constants.ARG_DELIMITER);
+                String hostName = hostArr[0];
+                int serviceName = Integer.parseInt(hostArr[1]);
+                Configuration configuration = Configuration.getInstance();
+                String userName = configuration.getStringProperty(SequoiadbConstants.MONITOR_SOURCE_SDB_USER);
+                String password = EncryptUtil.passwordDecrypt(
+                        configuration.getStringProperty(SequoiadbConstants.MONITOR_SOURCE_SDB_PASSWORD_ENCRYPT_TYPE),
+                        configuration.getStringProperty(SequoiadbConstants.MONITOR_SOURCE_SDB_PASSWORD_PRIVATE_KEY),
+                        configuration.getStringProperty(SequoiadbConstants.MONITOR_SOURCE_SDB_PASSWORD));
+                ConfigOptions configOptions = new ConfigOptions();
+                configOptions.setConnectTimeout(connectTimeout);
+                configOptions.setSocketTimeout(socketTimeout);
+                return new Sequoiadb(hostName, serviceName, userName, password, configOptions);
+            } catch (BaseException e) {
+                // ignore exception
             }
+        }
+        throw MonitorException.asMonitorException(SequoiadbErrorCode.CONNECT_ERROR, "failed to connect sdb");
+    }
+
+    public Sequoiadb getSdbConnection() {
+        String hosts = configuration.getStringProperty(SequoiadbConstants.MONITOR_SOURCE_SDB_HOST);
+        String[] hostsArr = hosts.split(Constants.RECORD_DELIMIER);
+        for (String host : hostsArr) {
+            try {
+                String[] hostArr = host.split(Constants.ARG_DELIMITER);
+                String hostName = hostArr[0];
+                int serviceName = Integer.parseInt(hostArr[1]);
+                Configuration configuration = Configuration.getInstance();
+                String userName = configuration.getStringProperty(SequoiadbConstants.MONITOR_SOURCE_SDB_USER);
+                String password = EncryptUtil.passwordDecrypt(
+                        configuration.getStringProperty(SequoiadbConstants.MONITOR_SOURCE_SDB_PASSWORD_ENCRYPT_TYPE),
+                        configuration.getStringProperty(SequoiadbConstants.MONITOR_SOURCE_SDB_PASSWORD_PRIVATE_KEY),
+                        configuration.getStringProperty(SequoiadbConstants.MONITOR_SOURCE_SDB_PASSWORD));
+                return getConnection(hostName, serviceName, userName, password);
+            } catch (BaseException e) {
+                // ignore exception
+            }
+        }
+        throw MonitorException.asMonitorException(SequoiadbErrorCode.CONNECT_ERROR, "failed to connect sdb");
+    }
+
+    public void close(Sequoiadb db) {
+        if (null != db) {
+            db.close();
         }
     }
 }

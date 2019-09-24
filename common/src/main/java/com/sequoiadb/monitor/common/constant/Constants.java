@@ -28,6 +28,7 @@ public class Constants {
     public final static String MONITOR_SOURCE_TYPE_ITEM_MISFIRE= "monitor.source." + TYPE + "." + ITEM + ".misfire";
 
     public final static String MONITOR_TARGET_TYPE = "monitor.target.type";
+    public final static String ITEM_TYPE = "type.";
 
     public final static String ITEM_DELIMITER = ";";
     public final static String RECORD_DELIMIER = ",";

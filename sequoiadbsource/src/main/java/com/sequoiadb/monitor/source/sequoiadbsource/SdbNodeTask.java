@@ -60,7 +60,6 @@ public class SdbNodeTask implements Task {
                 BSONObject nodeStatusRecord = collectNodeStatus(node, false, currentDate);
                 nodeStatusList.add(nodeStatusRecord);
             }
-
             //协调节点
             List<String> coordNodes = SequoiadbUtil.getCoordNodes();
             for (String node : coordNodes) {
@@ -80,7 +79,6 @@ public class SdbNodeTask implements Task {
     }
 
     private void parseArgs(String args) {
-
         if (args != null && args.length() > 0) {
             String[] argsStrArr = args.split(Constants.ITEM_DELIMITER);
             for(String arg : argsStrArr) {
@@ -125,8 +123,9 @@ public class SdbNodeTask implements Task {
     private BSONObject collectNodeStatus(String node, boolean isCoord, String currentDate) {
         BSONObject nodeStatusRecord = new BasicBSONObject();
         DBCursor cursor = null;
+        Sequoiadb db = null;
         try {
-            Sequoiadb db = SdbConnectionUtil.getInstance().getConnection(node);
+            db = SdbConnectionUtil.getInstance().getSdbConnection(node);
             if (isCoord) {
                 if (nodeStatus) {
                     nodeStatusRecord.put("nodename", node);
@@ -194,6 +193,7 @@ public class SdbNodeTask implements Task {
             if (null != cursor) {
                 cursor.close();
             }
+            SdbConnectionUtil.getInstance().close(db);
             nodeStatusRecord.put("monitortime", currentDate);
         }
         return nodeStatusRecord;

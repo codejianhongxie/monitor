@@ -2,41 +2,14 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <parent>
+        <artifactId>monitor-all</artifactId>
+        <groupId>com.sequoiadb.monitor</groupId>
+        <version>1.0-SNAPSHOT</version>
+    </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>com.sequoiadb.monitor</groupId>
-    <artifactId>monitor-all</artifactId>
-    <name>monitor-all</name>
-    <packaging>pom</packaging>
-    <version>1.0-SNAPSHOT</version>
-    <modules>
-        <module>core</module>
-        <module>common</module>
-        <!--source-->
-        <module>consolesource</module>
-        <module>sequoiadbsource</module>
-        <!--target-->
-        <module>consoletarget</module>
-        <module>sequoiadbtarget</module>
-        <module>textfiletarget</module>
-
-    </modules>
-
-    <properties>
-        <java.version>7</java.version>
-        <project-sourceEncoding>UTF-8</project-sourceEncoding>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-        <maven.compiler.encoding>UTF-8</maven.compiler.encoding>
-    </properties>
-
-    <dependencies>
-        <dependency>
-            <groupId>ch.qos.logback</groupId>
-            <artifactId>logback-classic</artifactId>
-            <version>1.2.3</version>
-        </dependency>
-    </dependencies>
+    <artifactId>sequoiadbtarget</artifactId>
 
     <build>
         <plugins>
@@ -57,18 +30,28 @@
                 <configuration>
                     <finalName>monitor</finalName>
                     <descriptors>
-                        <descriptor>package.xml</descriptor>
+                        <descriptor>src/main/assembly/package.xml</descriptor>
                     </descriptors>
                 </configuration>
                 <executions>
                     <execution>
                         <id>make-assembly</id>
                         <phase>package</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
                     </execution>
                 </executions>
             </plugin>
         </plugins>
     </build>
-
+    <dependencies>
+        <dependency>
+            <groupId>com.sequoiadb.monitor</groupId>
+            <artifactId>monitor-common</artifactId>
+            <version>1.0-SNAPSHOT</version>
+            <scope>compile</scope>
+        </dependency>
+    </dependencies>
 
 </project>

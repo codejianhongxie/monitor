@@ -101,7 +101,6 @@ public class SelfSchedulerListener implements SchedulerListener {
     public void schedulerShutdown() {
         try {
             TaskRecordWriteHandler.getInstance().put(new TerminalRecord());
-            ThreadExecutorFactory.getInstance().shutdown();
         } catch (InterruptedException e) {
             //
         }

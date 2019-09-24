@@ -80,8 +80,9 @@ public class SequoiadbUtil {
         log.info("begin to collect cluster node");
         DBCursor cursor = null;
         Map<String, Map<String, List<String>>> clusterNodeMap = new LinkedHashMap<>(10);
+        Sequoiadb db = null;
         try {
-            Sequoiadb db = SdbConnectionUtil.getInstance().getCoordConnection();
+            db = SdbConnectionUtil.getInstance().getSdbConnection();
 
             cursor = db.getList(Sequoiadb.SDB_LIST_GROUPS, null, null, null);
 
@@ -129,6 +130,9 @@ public class SequoiadbUtil {
         } finally {
             if (null != cursor) {
                 cursor.close();
+            }
+            if (null != db) {
+                db.close();
             }
         }
         log.info("finish to collect cluster node info");

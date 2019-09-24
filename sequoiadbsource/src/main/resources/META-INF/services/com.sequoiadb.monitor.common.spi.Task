@@ -1,1 +1,4 @@
 sdb_node=com.sequoiadb.monitor.source.sequoiadbsource.SdbNodeTask
+sdb_context=com.sequoiadb.monitor.source.sequoiadbsource.SdbContextTask
+sdb_session=com.sequoiadb.monitor.source.sequoiadbsource.SdbSessionTask
+sdb_tbscan=com.sequoiadb.monitor.source.sequoiadbsource.SdbTableScanTask
