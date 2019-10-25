@@ -69,9 +69,9 @@ public class SdbTableScanTask implements Task {
                         int matcherEndIndex = description.lastIndexOf(",ScanType");
                         String matcher = description.substring(matcherBeginIndex + "Matcher:".length(), matcherEndIndex);
                         BSONObject tableScan = new BasicBSONObject();
-                        tableScan.put("node_name", nodeName);
-                        tableScan.put("monitor_time", currentDate);
-                        tableScan.put("cl_name", collectionName);
+                        tableScan.put("nodename", nodeName);
+                        tableScan.put("monitortime", currentDate);
+                        tableScan.put("clname", collectionName);
                         tableScan.put("matcher", matcher);
                         tableScanList.add(tableScan);
                     } else {

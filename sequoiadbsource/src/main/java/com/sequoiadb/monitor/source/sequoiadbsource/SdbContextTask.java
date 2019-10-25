@@ -11,7 +11,6 @@ import com.sequoiadb.monitor.source.sequoiadbsource.util.SdbConnectionUtil;
 import com.sequoiadb.monitor.source.sequoiadbsource.util.SequoiadbUtil;
 import org.bson.BSONObject;
 import org.bson.BasicBSONObject;
-import org.bson.types.BasicBSONList;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,6 +28,7 @@ public class SdbContextTask implements Task {
     private List<String> includeHostList;
     private int connectTimeout = 100;
     private int socketTimeout = 1000;
+    private int alarmCount = 100;
 
     @Override
     public void execute(Object object) {
@@ -43,47 +43,41 @@ public class SdbContextTask implements Task {
         parseArgs(args);
         parseItems(items);
 
-        Map<String, BSONObject> contextCountMap = new HashMap<>(10);
-        for(String host : includeHostList) {
-            BSONObject nodeContext = new BasicBSONObject();
-            nodeContext.put("monitor_time", currentDate);
-            nodeContext.put("node_name", host);
-            nodeContext.put("context_count", 0L);
-            contextCountMap.put(host, nodeContext);
-        }
+        List<BSONObject> sessionContextList = new ArrayList<>(10);
 
-        Sequoiadb db = null;
-        DBCursor contextCursor = null;
-        try {
-            BasicBSONList notCondition = new BasicBSONList();
-            notCondition.add(new BasicBSONObject("Contexts.Type", "DUMP"));
-            BSONObject matcherCondition = new BasicBSONObject();
-            matcherCondition.put("$not", notCondition);
-            log.info("get sdb connection");
-            db = SdbConnectionUtil.getInstance().getSdbConnection(connectTimeout, socketTimeout);
-            contextCursor = db.getSnapshot(Sequoiadb.SDB_SNAP_CONTEXTS, matcherCondition, null, null);
-            while (contextCursor.hasNext()) {
-                BSONObject context = contextCursor.getNext();
-                String nodeName = (String)context.get("NodeName");
-                if (contextCountMap.containsKey(nodeName)) {
-                    BSONObject nodeContext = contextCountMap.get(nodeName);
-                    long count = (Long) nodeContext.get("context_count") + 1;
-                    nodeContext.put("context_count", count);
-                } else {
-                    BSONObject nodeContext = new BasicBSONObject();
-                    nodeContext.put("context_count", 1L);
+        BSONObject matcherCondition = new BasicBSONObject();
+        matcherCondition.put("TotalCount", alarmCount);
+        matcherCondition.put("Global", false);
+        for(String host : includeHostList) {
+            Sequoiadb db = null;
+            DBCursor contextCursor = null;
+            try {
+                db = SdbConnectionUtil.getInstance().getSdbConnection(host);
+                contextCursor = db.getList(Sequoiadb.SDB_LIST_CONTEXTS, matcherCondition, null, null);
+                while (contextCursor.hasNext()) {
+                    BSONObject context = contextCursor.getNext();
+
+                    String nodeName = (String) context.get("NodeName");
+                    int totalCount =  (Integer)context.get("TotalCount");
+                    long sessionId = (Long)context.get("SessionID");
+
+                    BSONObject sessionContext = new BasicBSONObject();
+                    sessionContext.put("monitortime", currentDate);
+                    sessionContext.put("nodename", nodeName);
+                    sessionContext.put("sessionid", sessionId);
+                    sessionContext.put("totalcount", totalCount);
+                    sessionContextList.add(sessionContext);
                 }
+            } catch (Exception e) {
+                log.error("failed to count context.", e);
+            } finally {
+                if (null != contextCursor) {
+                    contextCursor.close();
+                }
+                SdbConnectionUtil.getInstance().close(db);
             }
-        } catch (Exception e) {
-            log.error("failed to count context.", e);
-        } finally {
-            if (null != contextCursor) {
-                contextCursor.close();
-            }
-            SdbConnectionUtil.getInstance().close(db);
         }
-        List<BSONObject> contextCountList = new ArrayList<>(contextCountMap.values());
-        Record record = new DefaultRecord(taskConfig, contextCountList);
+        Record record = new DefaultRecord(taskConfig, sessionContextList);
         try {
             TaskRecordWriteHandler.getInstance().put(record);
         } catch (InterruptedException e) {
@@ -100,6 +94,7 @@ public class SdbContextTask implements Task {
         String include = "include:";
         String connectTimeout = "connecttimeout:";
         String socketTimeout = "sockettimeout:";
+        String alarmCount = "alarmcount:";
         if (args != null && args.length() > 0) {
             String[] argsStrArr = args.split(Constants.ITEM_DELIMITER);
             for(String arg : argsStrArr) {
@@ -109,14 +104,18 @@ public class SdbContextTask implements Task {
                     includeHostList = Arrays.asList(includeHosts.split(Constants.RECORD_DELIMIER));
                 } else if (arg.startsWith(connectTimeout)) {
                     this.connectTimeout = Integer.parseInt(
-                            arg.substring(connectTimeout.indexOf(include) + connectTimeout.length()));
+                            arg.substring(arg.indexOf(include) + connectTimeout.length()));
                 } else if (arg.startsWith(socketTimeout)) {
                     this.socketTimeout = Integer.parseInt(
-                            arg.substring(socketTimeout.indexOf(include) + socketTimeout.length()));
+                            arg.substring(arg.indexOf(include) + socketTimeout.length()));
+                } else if (arg.startsWith(alarmCount)) {
+                    this.alarmCount = Integer.parseInt(
+                            arg.substring(arg.indexOf(alarmCount) + alarmCount.length()));
                 }
             }
-        } else {
-            includeHostList = SequoiadbUtil.getNotCoordNodes();
+        }
+        if (includeHostList == null) {
+            includeHostList = SequoiadbUtil.getCoordNodes();
         }
     }
 }

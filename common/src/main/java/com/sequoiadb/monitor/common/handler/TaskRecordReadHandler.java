@@ -33,7 +33,7 @@ public class TaskRecordReadHandler implements Runnable {
     public void run() {
 
         String outputTypeStr = Configuration.getInstance().getStringProperty(Constants.MONITOR_TARGET_TYPE);
-        String[] outputTypeArr = outputTypeStr.split(Constants.ITEM_DELIMITER);
+        String[] outputTypeArr = outputTypeStr.split(Constants.RECORD_DELIMIER);
         for(String outputType : outputTypeArr) {
             @SuppressWarnings("unchecked")
             Target<Record> target = (Target<Record>) PluginLoader.getPluginLoader(Target.class).getPlugin(outputType);

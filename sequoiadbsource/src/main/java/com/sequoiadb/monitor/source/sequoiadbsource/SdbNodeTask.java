@@ -37,6 +37,7 @@ public class SdbNodeTask implements Task {
     private boolean nodeLsn = false;
     private boolean nodePerf = false;
     private List<String> perfItems;
+    private Map<String, Long> primaryNodeLsn = new HashMap<>(10);
 
     @Override
     public void execute(Object object) {
@@ -59,6 +60,27 @@ public class SdbNodeTask implements Task {
             for (String node : includeNode) {
                 BSONObject nodeStatusRecord = collectNodeStatus(node, false, currentDate);
                 nodeStatusList.add(nodeStatusRecord);
+            }
+            if (nodeLsn) {
+                for(BSONObject nodeStatus : nodeStatusList) {
+                    String groupName = (String)nodeStatus.get("groupname");
+                    boolean isPrimary = (Boolean)nodeStatus.get("isprimary");
+                    boolean serviceStatus = (Boolean)nodeStatus.get("servicestatus");
+                    if (!isPrimary && serviceStatus) {
+                        long diffLsn = -1;
+                        //避免数据组无主的情况
+                        if (primaryNodeLsn.containsKey(groupName)) {
+                            long primaryLsn = primaryNodeLsn.get(groupName);
+                            long currentLsn = (Long)nodeStatus.get("currentlsn");
+                            diffLsn = primaryLsn - currentLsn;
+                        }
+                        nodeStatus.put("difflsn", diffLsn);
+                    } else if (serviceStatus){
+                        nodeStatus.put("difflsn", 0);
+                    } else {
+                        nodeStatus.put("difflsn", -1);
+                    }
+                }
             }
             //协调节点
             List<String> coordNodes = SequoiadbUtil.getCoordNodes();
@@ -133,11 +155,12 @@ public class SdbNodeTask implements Task {
                     nodeStatusRecord.put("isprimary", true);
                     nodeStatusRecord.put("servicestatus", true);
                     nodeStatusRecord.put("status", "Normal");
-                    nodeStatusRecord.put("errorinfo", 0);
+                    nodeStatusRecord.put("errorinfo", "");
                 }
                 if (nodeLsn) {
                     nodeStatusRecord.put("currentlsn", -1L);
                     nodeStatusRecord.put("completelsn", -1L);
+                    nodeStatusRecord.put("difflsn", 0L);
                 }
 
                 if (nodePerf) {
@@ -145,15 +168,17 @@ public class SdbNodeTask implements Task {
                         nodeStatusRecord.put(item.toLowerCase(), 0L);
                     }
                 }
-            } else { //非协调节点
+            } else {
+                //非协调节点
                 cursor = db.getSnapshot(Sequoiadb.SDB_SNAP_DATABASE, "", "", "");
                 while (cursor.hasNext()) {
                     BSONObject nodeRecord = cursor.getNext();
-
+                    String groupName = (String)nodeRecord.get("GroupName");
+                    boolean isPrimary = (boolean)nodeRecord.get("IsPrimary");
                     if (nodeStatus) {
                         nodeStatusRecord.put("nodename", nodeRecord.get("NodeName"));
-                        nodeStatusRecord.put("groupname", nodeRecord.get("GroupName"));
-                        nodeStatusRecord.put("isprimary", nodeRecord.get("IsPrimary"));
+                        nodeStatusRecord.put("groupname", groupName);
+                        nodeStatusRecord.put("isprimary", isPrimary);
                         nodeStatusRecord.put("servicestatus", nodeRecord.get("ServiceStatus"));
                         nodeStatusRecord.put("status", nodeRecord.get("Status"));
                         nodeStatusRecord.put("errorinfo", "");
@@ -161,8 +186,12 @@ public class SdbNodeTask implements Task {
                     if (nodeLsn) {
                         BSONObject currentLsn = (BSONObject) nodeRecord.get("CurrentLSN");
                         long completeLsn = (Long) nodeRecord.get("CompleteLSN");
-                        nodeStatusRecord.put("currentLsn", currentLsn.get("Offset"));
-                        nodeStatusRecord.put("completeLsn", completeLsn);
+                        long currentLsnOffset = (Long)currentLsn.get("Offset");
+                        nodeStatusRecord.put("currentlsn", currentLsnOffset);
+                        nodeStatusRecord.put("completelsn", completeLsn);
+                        if (isPrimary) {
+                            primaryNodeLsn.put(groupName, currentLsnOffset);
+                        }
                     }
 
                     if (nodePerf) {

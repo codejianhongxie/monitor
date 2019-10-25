@@ -74,8 +74,8 @@ public class SdbSessionTask implements Task {
         Map<String, BSONObject> connectCountMap = new HashMap<>(10);
         for(String host : includeHostList) {
             BSONObject nodeConnect = new BasicBSONObject();
-            nodeConnect.put("monitor_time", currentDate);
-            nodeConnect.put("node_name", host);
+            nodeConnect.put("monitortime", currentDate);
+            nodeConnect.put("nodename", host);
             nodeConnect.put("waiting", 0L);
             nodeConnect.put("running", 0L);
             connectCountMap.put(host, nodeConnect);

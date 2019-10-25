@@ -47,7 +47,7 @@
             <outputDirectory>monitor</outputDirectory>
         </fileSet>
         <fileSet>
-            <directory>gdrcutarget/target/monitor/</directory>
+            <directory>sequoiadbtarget/target/monitor/</directory>
             <includes>
                 <include>**/*.*</include>
             </includes>
